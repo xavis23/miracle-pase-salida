@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pase de Salida — Transportes Miracle</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#E8EDF4;min-height:100vh}
+
+/* ── TABS ── */
+.tabs{display:flex;background:#1B3A6B;padding:0 20px;gap:4px}
+.tab{padding:12px 20px;color:#93C5FD;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;transition:all .15s}
+.tab.active{color:white;border-bottom-color:#F59E0B}
+.tab i{margin-right:6px}
+.panel{display:none;padding:20px;max-width:1100px;margin:0 auto}
+.panel.active{display:block}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:0 1px 6px rgba(27,58,107,.08)}
+.card-title{font-size:12px;font-weight:700;color:#64748B;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+
+/* ── FORM ── */
+.sec{background:#1B3A6B;color:white;font-size:10px;font-weight:700;padding:4px 12px;border-radius:4px;margin:12px 0 8px;letter-spacing:.8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field label{display:block;font-size:10px;font-weight:700;color:#1B3A6B;margin-bottom:4px;text-transform:uppercase}
+.field input,.field select{width:100%;padding:8px 10px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13px;color:#0F172A;background:#F8FAFC;font-family:inherit;transition:border .15s}
+.field input:focus,.field select:focus{outline:none;border-color:#2563EB;background:white}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231B3A6B' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;-webkit-appearance:none;appearance:none}
+.field input:disabled,.field select:disabled{background:#F1F5F9;color:#94A3B8;cursor:not-allowed}
+.field.wo input{font-size:16px;font-weight:700;border-color:#1B3A6B;border-width:2px;background:#EFF6FF}
+.field.op-ready select{border-color:#16A34A;background:#F0FDF4}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #CBD5E1;background:white;color:#0F172A;transition:all .15s;font-family:inherit}
+.btn:hover{background:#F1F5F9}
+.btn-dark{background:#1B3A6B;color:white;border-color:#1B3A6B}
+.btn-dark:hover{background:#2563EB;border-color:#2563EB}
+.btn-green{background:#166534;color:white;border-color:#166534}
+.btn-green:hover{background:#15803d}
+.btn-wa{background:#16a34a;color:white;border-color:#16a34a}
+.btn-red{background:#991B1B;color:white;border-color:#991B1B}
+.btn-red:hover{background:#7F1D1D}
+
+/* ── SUPABASE STATUS ── */
+.sb-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 12px;border-radius:6px;margin-bottom:12px}
+.sb-ok{background:#DCFCE7;color:#166534}
+.sb-err{background:#FEE2E2;color:#991B1B}
+.sb-loading{background:#DBEAFE;color:#1E40AF}
+.sb-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sb-dot.ok{background:#16A34A}
+.sb-dot.err{background:#DC2626}
+.sb-dot.loading{background:#2563EB;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── PASE IMPRIMIBLE ── */
+@media print{
+  @page{size:letter portrait;margin:8mm 10mm}
+  body{background:white!important}
+  .tabs{display:none!important}
+  .panel{display:none!important}
+  #panel-desp{display:block!important;padding:0!important;max-width:100%!important}
+  #main-grid{display:block!important}
+  .form-col-inner{display:none!important}
+  .pase-col-inner{display:block!important;width:100%!important}
+  .sb-status{display:none!important}
+  .acciones{display:none!important}
+  .login-bar{display:none!important}
+  .pase-preview{display:block!important;border:2px solid #1B3A6B!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+.pase-preview{font-family:Arial,sans-serif;background:white;border:2px solid #1B3A6B;position:relative;overflow:hidden}
+.pase-preview::before{content:"MIRACLE";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-38deg);font-size:90px;font-weight:900;color:rgba(27,58,107,.04);pointer-events:none;white-space:nowrap;z-index:0}
+.p-hdr{background:#1B3A6B;padding:10px 14px;display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.p-logo{background:white;border-radius:4px;width:64px;height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.p-logo-tm{font-size:18px;font-weight:900;color:#1B3A6B;line-height:1}
+.p-logo-sub{font-size:5px;color:#2563EB;font-weight:700;text-align:center;line-height:1.4}
+.p-emp{flex:1}
+.p-emp-name{font-size:13px;font-weight:700;color:white}
+.p-emp-sub{font-size:7px;color:#93C5FD;margin-top:2px}
+.p-folio{background:#F59E0B;border-radius:5px;padding:5px 10px;text-align:center;min-width:110px}
+.p-folio-lbl{font-size:6px;font-weight:700;color:#1B3A6B;letter-spacing:1px}
+.p-folio-val{font-size:12px;font-weight:900;color:#1B3A6B}
+.p-folio-sub{font-size:6px;color:#92400E;font-weight:700}
+.p-titulo{background:#2563EB;color:white;text-align:center;font-size:10px;font-weight:700;padding:3px;letter-spacing:2px;position:relative;z-index:1}
+.p-digital-badge{background:#7C3AED;color:white;text-align:center;font-size:8px;font-weight:700;padding:3px;letter-spacing:.5px;position:relative;z-index:1}
+.p-body{padding:8px 12px;position:relative;z-index:1}
+.p-wo-bar{background:#1B3A6B;border-radius:4px;padding:5px 10px;display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.p-wo-lbl{font-size:8px;color:#93C5FD;font-weight:600;white-space:nowrap}
+.p-wo-val{font-size:17px;font-weight:900;color:#FCD34D;letter-spacing:.5px}
+.p-wo-tipo{margin-left:auto;background:rgba(255,255,255,.12);color:white;font-size:7px;font-weight:700;padding:2px 8px;border-radius:3px}
+.p-sec{background:#1E40AF;color:white;font-size:7px;font-weight:700;padding:2px 8px;border-radius:2px;margin-bottom:4px;letter-spacing:.8px}
+.ptbl{width:100%;border-collapse:collapse;margin-bottom:6px}
+.ptbl th{background:#F1F5F9;color:#1B3A6B;font-size:7px;font-weight:700;padding:3px 6px;border:0.5px solid #CBD5E1;text-align:left}
+.ptbl td{background:white;padding:4px 6px;border:0.5px solid #CBD5E1;font-size:9px;font-weight:600;color:#0F172A}
+.ptbl td.b{font-weight:800;color:#1B3A6B;font-size:10px}
+.p-omision{background:#EDE9FE;border:1px solid #7C3AED;border-radius:4px;padding:5px 10px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px}
+.p-omision-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.p-omision-txt{font-size:7.5px;color:#5B21B6;font-weight:600;line-height:1.4}
+.p-omision-txt strong{font-size:8px;display:block;margin-bottom:1px}
+.p-qr-row{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start}
+.p-qr-box{border:1px solid #CBD5E1;border-radius:4px;padding:4px;background:white;flex-shrink:0}
+.p-qr-lbl{font-size:6px;color:#64748B;text-align:center;margin-top:2px;font-weight:600}
+.p-firmas-wrap{flex:1}
+.firmas{display:flex;background:#1B3A6B;border-radius:4px;padding:7px 8px;gap:4px;margin-bottom:5px}
+.firma{flex:1;text-align:center;border-right:0.5px solid rgba(255,255,255,.2);padding:0 4px}
+.firma:last-child{border-right:none}
+.firma-nom{color:white;font-size:8px;font-weight:700}
+.firma-car{color:#93C5FD;font-size:6px;margin:1px 0 4px}
+.firma-lin{border-top:0.5px solid rgba(255,255,255,.3);padding-top:3px;color:#CBD5E1;font-size:6px}
+.firma-sello{color:#FCD34D;font-size:6.5px;font-weight:700;margin-top:2px}
+.aviso{background:#FEE2E2;border:1px solid #DC2626;border-radius:3px;padding:5px 8px}
+.aviso-t{color:#DC2626;font-size:7.5px;font-weight:700;margin-bottom:2px}
+.aviso ol{padding-left:12px}
+.aviso li{font-size:7px;color:#7F1D1D;font-weight:600;margin-bottom:1px}
+.p-footer{background:#1B3A6B;color:#93C5FD;font-size:6px;text-align:center;padding:4px;position:relative;z-index:1}
+
+/* ── GUARDIA PANEL ── */
+.g-search{display:flex;gap:8px;margin-bottom:16px}
+.g-search input{flex:1;padding:10px 14px;border:2px solid #1B3A6B;border-radius:8px;font-size:14px;font-family:inherit}
+.g-pase{border:2px solid #166534;border-radius:10px;overflow:hidden;background:white;max-width:500px;margin:0 auto}
+.g-pase-hdr{background:#166534;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.g-pase-folio{background:#FCD34D;color:#166534;font-size:12px;font-weight:800;padding:4px 12px;border-radius:99px}
+.g-body{padding:14px}
+.g-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.g-cell{background:#F8FAFC;border-radius:6px;padding:8px 10px}
+.g-cell-lbl{font-size:10px;color:#64748B;font-weight:600;margin-bottom:2px}
+.g-cell-val{font-size:13px;font-weight:600;color:#0F172A}
+.g-cell-val.big{font-size:16px;color:#1B3A6B;font-weight:700}
+.g-omision{background:#EDE9FE;border:1.5px solid #7C3AED;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#5B21B6;font-weight:600}
+.btn-autorizar{width:100%;padding:14px;font-size:15px;font-weight:700;background:#166534;color:white;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.btn-autorizar:hover{background:#15803d}
+.btn-rechazar-g{width:100%;padding:10px;font-size:13px;font-weight:600;background:#991B1B;color:white;border:none;border-radius:8px;cursor:pointer;margin-top:6px}
+.msg-ok{background:#DCFCE7;border:2px solid #166534;border-radius:8px;padding:16px;text-align:center;margin-top:10px}
+.msg-ok-icon{font-size:36px;color:#166534;display:block;margin-bottom:6px}
+.msg-rec{background:#FEE2E2;border:2px solid #DC2626;border-radius:8px;padding:16px;text-align:center;margin-top:10px}
+
+/* ── BITÁCORA ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat-box{background:white;border-radius:8px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-lbl{font-size:11px;color:#64748B;margin-bottom:4px}
+.stat-val{font-size:26px;font-weight:700;color:#0F172A}
+.bar-wrap{margin-top:6px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bar-lbl{width:90px;font-size:11px;color:#64748B}
+.bar-track{flex:1;height:9px;background:#F1F5F9;border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .5s}
+.bar-cnt{width:22px;font-size:12px;font-weight:600;text-align:right}
+.bita-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.bita-tbl th{background:#F8FAFC;font-size:11px;font-weight:700;color:#1B3A6B;padding:7px 10px;border-bottom:1.5px solid #E2E8F0;text-align:left}
+.bita-tbl td{padding:8px 10px;border-bottom:0.5px solid #F1F5F9;vertical-align:middle}
+.bita-tbl tr:hover td{background:#F8FAFC}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
+.pill-local{background:#DBEAFE;color:#1E40AF}
+.pill-regional{background:#DCFCE7;color:#166534}
+.pill-nacional{background:#FEF3C7;color:#92400E}
+.pill-cruce{background:#EDE9FE;color:#5B21B6}
+.pill-binacional{background:#FEE2E2;color:#991B1B}
+.pill-rec{background:#F3E8FF;color:#6B21A8}
+.status-auth{color:#166534;font-weight:600;font-size:11px}
+.status-pend{color:#92400E;font-weight:600;font-size:11px}
+.status-rec-s{color:#991B1B;font-weight:600;font-size:11px}
+.empty{text-align:center;padding:40px;color:#94A3B8;font-size:13px}
+.login-bar{background:#EFF6FF;border:2px solid #2563EB;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.login-bar label{font-size:11px;font-weight:700;color:#1B3A6B;text-transform:uppercase;white-space:nowrap}
+.login-bar select{flex:1;padding:8px 12px;border:2px solid #2563EB;border-radius:6px;font-size:14px;font-weight:600;color:#1B3A6B;background:white;font-family:inherit}
+.login-badge{background:#2563EB;color:white;padding:6px 14px;border-radius:5px;font-size:12px;font-weight:700;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('desp')" id="tab-desp">🖥 Despachador (PC)</button>
+  <button class="tab" onclick="showTab('guardia')" id="tab-guardia">🛡 Guardia / Operador (Cel)</button>
+  <button class="tab" onclick="showTab('bita')" id="tab-bita">📊 Bitácora <span id="bita-cnt" style="background:#F59E0B;color:#1B3A6B;font-size:10px;padding:1px 7px;border-radius:99px;margin-left:4px;font-weight:700">0</span></button>
+</div>
+
+<!-- ══ PANEL DESPACHADOR ══ -->
+<div id="panel-desp" class="panel active">
+  <div id="sb-status-bar" class="sb-status sb-loading"><span class="sb-dot loading"></span>Conectando con Supabase...</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" id="main-grid">
+    <!-- FORMULARIO -->
+    <div class="form-col-inner">
+      <div class="login-bar">
+        <label>👤 Despachador</label>
+        <select id="d-desp" onchange="regen()">
+          <option value="">-- Tu nombre --</option>
+          <option>FRANSIS</option><option>ADRIAN SOLORIO</option>
+          <option>IVAN GONZALEZ</option><option>ADRIAN BORQUEZ</option><option>ZUSETH CHIQUITO</option>
+        </select>
+        <div class="login-badge" id="badge-desp">Sin selección</div>
+      </div>
+      <div class="card">
+        <div class="sec">1 · WO / Presolicitud</div>
+        <div class="grid2">
+          <div class="field wo"><label>WO o Folio *</label><input type="text" id="d-wo" placeholder="WO-2026-0847" oninput="regen()"></div>
+          <div class="field"><label>Tipo movimiento *</label>
+            <select id="d-tipo" onchange="regen()">
+              <option value="">-- Tipo --</option>
+              <option>LOCAL</option><option>RECOLECCION</option><option>REGIONAL</option>
+              <option>NACIONAL</option><option>CRUCE</option><option>BINACIONAL</option>
+            </select>
+          </div>
+        </div>
+        <div class="sec" style="margin-top:10px">2 · Operador y Unidad</div>
+        <div class="field" style="margin-bottom:8px">
+          <label>Tipo de operador *</label>
+          <select id="d-tipo-op" onchange="filtrarOps()">
+            <option value="">-- Selecciona tipo --</option>
+            <option value="LOCAL">🟢 LOCAL (29 choferes)</option>
+            <option value="CRUCE">🔵 CRUCE (5 choferes)</option>
+            <option value="BINACIONAL">🟣 BINACIONAL (46 choferes)</option>
+          </select>
+        </div>
+        <div class="field op-ready" style="margin-bottom:8px" id="field-op">
+          <label>Operador *</label>
+          <select id="d-op" onchange="regen()" disabled>
+            <option value="">⬅ Primero elige el tipo</option>
+          </select>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>Unidad ECO *</label><input type="text" id="d-unidad" placeholder="ECO-12" oninput="regen()"></div>
+          <div class="field"><label>Caja ECO *</label><input type="text" id="d-caja" placeholder="CAJA-45" oninput="regen()"></div>
+          <div class="field"><label>Placas</label><input type="text" id="d-placas" placeholder="TM-4521-BC" oninput="regen()"></div>
+        </div>
+        <div class="sec" style="margin-top:10px">3 · Ruta y Cliente</div>
+        <div class="grid2" style="margin-bottom:8px">
+          <div class="field"><label>Cliente *</label>
+            <select id="d-cli" onchange="regen()">
+              <option value="">-- Cliente --</option>
+              <option>BACHOCO</option><option>JAZTEA</option><option>SUKARNE</option>
+              <option>INGETEK</option><option>ALPHA</option><option>SPINDLE</option>
+              <option>LA-Z-BOY</option><option>VGS</option><option>OTROS</option>
+            </select>
+          </div>
+          <div class="field"><label>Ruta</label>
+            <select id="d-ruta" onchange="onRuta()"><option value="">-- Ruta --</option></select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Origen</label><input type="text" id="d-origen" placeholder="Auto al elegir ruta" oninput="regen()"></div>
+          <div class="field"><label>Destino</label><input type="text" id="d-destino" placeholder="Auto al elegir ruta" oninput="regen()"></div>
+        </div>
+        <div class="sec" style="margin-top:10px">4 · Horario</div>
+        <div class="grid3">
+          <div class="field"><label>Fecha salida</label><input type="date" id="d-fecha" oninput="regen()"></div>
+          <div class="field"><label>Hora autorizada *</label><input type="time" id="d-hora" oninput="regen()"></div>
+          <div class="field"><label>Retorno estimado</label><input type="date" id="d-retorno" oninput="regen()"></div>
+        </div>
+      </div>
+      <button class="btn btn-dark" style="width:100%;justify-content:center;padding:12px" onclick="generarPase()">
+        ✅ Generar Pase y Guardar en Bitácora
+      </button>
+      <div id="acciones" style="display:none;margin-top:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-dark" onclick="window.print()">🖨 Imprimir</button>
+          <button class="btn btn-wa" onclick="enviarWA()">📱 WhatsApp al Operador</button>
+          <button class="btn" onclick="copiarFolio()">🔗 Copiar Folio para Guardia</button>
+          <button class="btn" onclick="limpiar()">🗑 Nuevo Pase</button>
+        </div>
+        <div id="msg-copiado" style="display:none;font-size:11px;color:#166534;padding:4px 0">✓ Folio copiado — pégalo en WhatsApp al guardia</div>
+      </div>
+    </div>
+
+    <!-- PREVIEW PASE -->
+    <div class="pase-col-inner">
+      <div style="font-size:11px;color:#64748B;margin-bottom:6px;font-weight:600">👁 VISTA PREVIA DEL PASE</div>
+      <div class="pase-preview" id="pase-doc">
+        <div class="p-hdr">
+          <div class="p-logo"><div class="p-logo-tm">TM</div><div class="p-logo-sub">TRANSPORTES<br>MIRACLE</div></div>
+          <div class="p-emp">
+            <div class="p-emp-name">TRANSPORTES MIRACLE S.A. DE C.V.</div>
+            <div class="p-emp-sub">Mexicali, BC &nbsp;·&nbsp; C-TPAT Certified &nbsp;·&nbsp; SCT &nbsp;·&nbsp; Tel. (686) 000-0000</div>
+          </div>
+          <div class="p-folio">
+            <div class="p-folio-lbl">FOLIO</div>
+            <div class="p-folio-val" id="pv-folio">PS-??????</div>
+            <div class="p-folio-sub">USO ÚNICO</div>
+          </div>
+        </div>
+        <div class="p-titulo">✦ &nbsp; PASE DE SALIDA AUTORIZADO &nbsp; ✦</div>
+        <div class="p-digital-badge">📱 PASE DIGITAL · OMISIÓN DE FÍSICO POR TEMA OPERATIVO · DOCUMENTO FÍSICO PENDIENTE DE FIRMA</div>
+        <div class="p-body">
+          <div class="p-wo-bar">
+            <div><div class="p-wo-lbl">WO / PRESOLICITUD</div><div class="p-wo-val" id="pv-wo">—</div></div>
+            <div class="p-wo-tipo" id="pv-tipo">—</div>
+          </div>
+          <div class="p-sec">1. OPERADOR Y UNIDAD</div>
+          <table class="ptbl">
+            <tr><th>Operador</th><td class="b" id="pv-op" colspan="3">—</td><th>Tipo</th><td id="pv-tipo-op">—</td></tr>
+            <tr><th>Unidad</th><td id="pv-unidad">—</td><th>Caja</th><td id="pv-caja">—</td><th>Placas</th><td id="pv-placas">—</td></tr>
+          </table>
+          <div class="p-sec">2. RUTA Y CLIENTE</div>
+          <table class="ptbl">
+            <tr><th>Cliente</th><td class="b" id="pv-cli">—</td><th>Despachador</th><td id="pv-desp">—</td></tr>
+            <tr><th>Ruta</th><td colspan="3" class="b" id="pv-ruta">—</td></tr>
+            <tr><th>Origen</th><td id="pv-origen">—</td><th>Destino</th><td class="b" id="pv-destino">—</td></tr>
+          </table>
+          <div class="p-sec">3. HORARIO</div>
+          <table class="ptbl" style="margin-bottom:7px">
+            <tr><th>Fecha</th><td id="pv-fecha">—</td><th>Hora auth.</th><td id="pv-hora">—</td><th>Retorno</th><td id="pv-retorno">—</td></tr>
+          </table>
+          <div class="p-omision">
+            <div class="p-omision-icon">🔵</div>
+            <div class="p-omision-txt">
+              <strong>OMISIÓN DE FÍSICO — PASE DIGITAL AUTORIZADO</strong>
+              Este pase fue emitido en formato digital por tema operativo o urgencia de salida. El documento físico con firmas originales queda pendiente. La autorización digital del guardia en caseta tiene plena validez operativa. Folio: <span id="pv-folio2">—</span>
+            </div>
+          </div>
+          <div class="p-qr-row">
+            <div>
+              <div class="p-qr-box"><div id="qr-container" style="width:70px;height:70px"></div></div>
+              <div class="p-qr-lbl">Escanear para<br>verificar pase</div>
+            </div>
+            <div class="p-firmas-wrap">
+              <div class="firmas">
+                <div class="firma"><div class="firma-nom" id="pv-f-desp">DESPACHADOR</div><div class="firma-car">Emite el pase</div><div class="firma-lin">__________<br>Firma</div></div>
+                <div class="firma"><div class="firma-nom">XAVIER GONZALEZ</div><div class="firma-car">Gerente de Operaciones</div><div class="firma-sello">✦ AUTORIZACIÓN ✦</div></div>
+                <div class="firma"><div class="firma-nom">GUARDIA EN TURNO</div><div class="firma-car">Autoriza salida</div><div class="firma-lin">__________<br>Firma · Hora:____</div></div>
+              </div>
+              <div class="aviso">
+                <div class="aviso-t">⚠ INSTRUCCIONES GUARDIA</div>
+                <ol>
+                  <li>Verificar operador, unidad y caja físicamente con este pase antes de autorizar.</li>
+                  <li>Registrar firma y hora real de salida. Sin confirmación el pase no tiene validez.</li>
+                  <li>Pase de USO ÚNICO — retirar o confirmar digitalmente al paso del operador.</li>
+                  <li>Discrepancia de datos → NO autorizar y avisar al despachador de inmediato.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-footer" id="pv-footer">Folio: — · WO: — · Transportes Miracle S.A. de C.V. · Conservar 12 meses</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL GUARDIA ══ -->
+<div id="panel-guardia" class="panel">
+  <div style="max-width:520px;margin:0 auto">
+    <div class="card">
+      <div class="card-title">🔍 Buscar pase — escribe el folio o WO</div>
+      <div class="g-search">
+        <input type="text" id="g-buscar" placeholder="PS-260616-AB3C  o  WO-2026-0847" oninput="buscarPase()">
+      </div>
+      <div id="g-resultado"></div>
+    </div>
+    <div class="card" style="background:#F8FAFC;border:1.5px dashed #CBD5E1;text-align:center;padding:24px">
+      <div style="font-size:32px;margin-bottom:8px">📷</div>
+      <div style="font-size:13px;color:#64748B;font-weight:600">El operador muestra el QR de su pase</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">El guardia escanea con la cámara → abre automáticamente este buscador con el folio cargado</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL BITÁCORA ══ -->
+<div id="panel-bita" class="panel">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-lbl">Total del día</div><div class="stat-val" id="st-total">0</div><div style="font-size:10px;color:#94A3B8;margin-top:2px">pases generados</div></div>
+    <div class="stat-box"><div class="stat-lbl">Autorizados ✅</div><div class="stat-val" id="st-auth" style="color:#166534">0</div><div style="font-size:10px;color:#94A3B8;margin-top:2px">por guardia</div></div>
+    <div class="stat-box"><div class="stat-lbl">Pendientes ⏳</div><div class="stat-val" id="st-pend" style="color:#92400E">0</div><div style="font-size:10px;color:#94A3B8;margin-top:2px">sin confirmar</div></div>
+    <div class="stat-box"><div class="stat-lbl">Rechazados ❌</div><div class="stat-val" id="st-rec" style="color:#991B1B">0</div><div style="font-size:10px;color:#94A3B8;margin-top:2px">hoy</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">📊 Por tipo de movimiento</div>
+      <div class="bar-wrap" id="tipo-bars"><div style="color:#94A3B8;font-size:12px">Sin datos aún</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 Por despachador</div>
+      <div class="bar-wrap" id="desp-bars"><div style="color:#94A3B8;font-size:12px">Sin datos aún</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <input type="text" id="bita-q" placeholder="Buscar por WO, operador, guardia, tipo..." oninput="renderBita()" style="flex:1;padding:8px 12px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:13px;font-family:inherit">
+      <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+    </div>
+    <div style="overflow-x:auto" id="bita-wrap"></div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://plwmyfipqgqdvjfrhvzq.supabase.co';
+const SB_KEY='sb_publishable_VIyy4JHwPtQwGNyphsbOog_VqMPxnk7';
+
+const OPERADORES={
+  LOCAL:["ALVAREZ MONTENEGRO ESTEBAN DE JESUS","BELTRAN JIMENEZ LORETO MIGUEL","CARRANZA NEVAREZ JUAN JOSE","CONDE TEPEZANO JONATHAN ADAN","CORONADO MARTINEZ MARCOS GAMALIEL","COTA BARRON ARTURO","DE ANDA ARIAS JONATHAN","DERAS CAZAREZ JUAN DE DIOS","FLORES JAIME JORGE ALEJANDRO","GARCIA BELTRAN RICARDO JASSIEL","GONZALEZ SAINZ ADOLFO JAXIEL","GONZALEZ TORREZ SANTOS","ILDIFONZO SOLIS AARON","JAUREGUI MEZA MANUEL","JIMENEZ MADRIGAL IVAN","LORANCA LOPEZ ALBERTO","MADRIGAL QUINTERO GERARDO","MARQUEZ PEREZ ERNESTO","MENDOZA SERRANO JOSE ANTONIO","NAVARRO GARCIA JESUS ANTONIO","QUIROZ LOAIZA ABRAHAM JOSUE","REYES BARRAZA CRISTIAN JOSE","REYES VELASQUEZ ARMANDO","RODRIGUEZ OBESO LUIS AURELIO","SIERRAS CRUZ FRANCISCO ISRAEL","SIERRAS LORETO FRANCISCO ISRAEL","URIAS ZAMORA JESUS ZAID","VILLANUEVA BOCANEGRA JUAN CRISTIAN","ZAMORA NAVARRO MIGUEL ANGEL"],
+  CRUCE:["CARDENAS LOPEZ JUAN MANUEL","CASTAÑEDA ESPINOZA CARLOS ALFREDO","LOPEZ ORDOÑEZ EDER","NIEBLA SOTO JOSE DANIEL","RAMOS CASTRO JESUS DANIEL"],
+  BINACIONAL:["ALMEIDA ALEMAN JESUS ENRIQUE","ARCE MEDINA MANUEL EDUARDO","ARROYO JUAN ANTONIO","BAEZ VILLALOBOS MARIO JAVIER","BEJARANO GODINEZ RODOLFO","BEJARANO VALLES EDGAR ARNOLDO","BORJON TELLO JESUS FRANCISCO","CISNEROS MARTINEZ EDGAR IVAN","CORONADO MARTINEZ ELIAS MANUEL","COTA RAMIREZ JOSE ARTURO","FELIX TORRES LUIS ALBERTO","GARCIA CERVANTES SALVADOR","GARCIA FELIX FELIPE ALEJANDRO","GARCIA TAPIZ ROBERTO","GONZALEZ LUCERO MARIO MANUEL","GONZALEZ TORRES OSCAR ARMANDO","GRIJALVA CABRERA LUIS LAMBERTO","HERNANDEZ FELIX RAUL","HERNANDEZ GUARDADO CARLOS","HERRERA ESPINOZA SALVADOR","JIMENEZ ARREDONDO LAURO ADRIAN","LEOS DIAZ GILBERTO","LLANES HURTADO EFRAIN","LOPEZ GONZALEZ JOSE RUBEN","LOPEZ JUAREZ ADRIAN GUADALUPE","MORENO MORENO RENATO","MURILLO RAMIREZ MARCO ANTONIO","NUÑEZ RODARTE JONATHAN","OLIVEROS GUERRERO JULIAN ALEJANDRO","ORTEGA SANCHEZ GERMAN EFRAIN","PEREZ CHAVEZ JOSE LUIS","RAMOS VERA ALEJANDRO","RAMOS ZENTENO ERNESTO","RODRIGUEZ BOJORQUEZ HERNAN","RODRIGUEZ CHAIRA ERIBERTO","RUIZ COBOS JESUS ALFREDO","SANCHEZ LEON AGUSTIN","TAFOYA VALENZUELA MANUEL","TAMAYO ROCHA JUAN DIEGO","TORRES LOPEZ ALEJANDRO","VACA MENDEZ LUIS ALFONSO","VASQUEZ HERNANDEZ SERGIO IVAN","VASQUEZ ROJAS HEBRET ABRAHAM","VEGA GARCIA JUAN CARLOS","VILLARREAL GUILLIN ALEJANDRO","VILLARREAL LOPEZ JUAN RAMON"]
+};
+
+const RUTAS=[
+  {id:"M-22",n:"CEDIS BACHOCO MXL → Bachoco Sta.Ana",or:"CEDIS Bachoco Mexicali",dst:"Bachoco Santa Ana, Son."},
+  {id:"M-25",n:"PLANTA SK → CEDIS SUKARNE",or:"Planta SuKarne Mexicali",dst:"CEDIS SuKarne"},
+  {id:"M-26",n:"JAZTEA MXL → CEDIS OXXO MXL",or:"Jaztea Mexicali",dst:"CEDIS OXXO Mexicali"},
+  {id:"M-28",n:"PLANTA SK → AGENCIA TJ SUKARNE",or:"Planta SuKarne Mexicali",dst:"Agencia TJ SuKarne"},
+  {id:"M-29",n:"JAZTEA MXL → JAZTEA TJ / OXXO TJ",or:"Jaztea Mexicali",dst:"Jaztea TJ / OXXO TJ"},
+  {id:"M-38",n:"CEDIS SUKARNE → TSK PEÑASCO",or:"CEDIS SuKarne Mexicali",dst:"TSK Puerto Peñasco"},
+  {id:"M-43",n:"PLANTA SK → SUKARNE CULIACÁN",or:"Planta SuKarne Mexicali",dst:"SuKarne Culiacán"},
+  {id:"M-44",n:"PLANTA SK → SuKarne Div.Pieles",or:"Planta SuKarne Mexicali",dst:"SuKarne División Pieles USA"},
+  {id:"U-12",n:"INGETEK → BAKER CONCRETE PHOENIX",or:"Ingetek Mexicali",dst:"Baker Concrete Phoenix, AZ"},
+  {id:"U-20",n:"INGETEK → REBAR SAN JOSE",or:"Ingetek Mexicali",dst:"Rebar San Jose, CA"},
+  {id:"U-23",n:"EL MILAGRO → FIRESTONE VANCOUVER",or:"El Milagro SQ",dst:"Firestone Vancouver, WA"},
+];
+RUTAS.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.id+' — '+r.n;document.getElementById('d-ruta').appendChild(o);});
+
+let bitacora=[];
+let folioActual='';
+let paseActual=null;
+let qrInstance=null;
+let sbOk=false;
+
+// ── SUPABASE ──
+async function sbFetch(path,opts={}){
+  const res=await fetch(SB_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return res.json();
+}
+
+async function iniciarSB(){
+  try{
+    await sbFetch('pases_salida?limit=50&order=created_at.desc');
+    sbStatus('ok','Supabase conectado — bitácora permanente activa');
+    sbOk=true;
+    await cargarBitacora();
+  }catch(e){
+    sbStatus('err','Sin conexión a Supabase — modo local (datos no se guardan al cerrar)');
+  }
+}
+
+function sbStatus(tipo,msg){
+  const el=document.getElementById('sb-status-bar');
+  el.className='sb-status sb-'+tipo;
+  el.innerHTML=`<span class="sb-dot ${tipo}"></span>${msg}`;
+}
+
+async function cargarBitacora(){
+  try{
+    const data=await sbFetch('pases_salida?order=created_at.desc&limit=200');
+    bitacora=data.map(r=>({
+      folio:r.folio,wo:r.wo,tipo:r.tipo,operador:r.operador,tipo_op:r.tipo_op,
+      unidad:r.unidad,caja:r.caja,placas:r.placas,cliente:r.cliente,
+      despachador:r.despachador,ruta:r.ruta,origen:r.origen,destino:r.destino,
+      fecha:r.fecha_salida,hora:r.hora_auth,retorno:r.fecha_retorno,
+      emitido:new Date(r.created_at).toLocaleString('es-MX'),
+      status:r.status,guardia:r.guardia||'',hora_real:r.hora_real||''
+    }));
+    updateCnt();renderStats();renderBita();
+  }catch(e){console.warn('Error cargando bitácora',e);}
+}
+
+async function guardarEnSB(p){
+  if(!sbOk)return;
+  try{
+    await sbFetch('pases_salida',{method:'POST',body:JSON.stringify({
+      folio:p.folio,wo:p.wo,tipo:p.tipo,operador:p.operador,tipo_op:p.tipo_op,
+      unidad:p.unidad,caja:p.caja,placas:p.placas,cliente:p.cliente,
+      despachador:p.despachador,ruta:p.ruta,origen:p.origen,destino:p.destino,
+      fecha_salida:p.fecha,hora_auth:p.hora,fecha_retorno:p.retorno,
+      status:'pendiente',es_digital:true
+    })});
+  }catch(e){console.warn('Error guardando en SB',e);}
+}
+
+async function actualizarSB(folio,status,guardia,hora_real){
+  if(!sbOk)return;
+  try{
+    await sbFetch('pases_salida?folio=eq.'+encodeURIComponent(folio),{
+      method:'PATCH',
+      body:JSON.stringify({status,guardia,hora_real,autorizado_en:new Date().toISOString()})
+    });
+  }catch(e){console.warn('Error actualizando SB',e);}
+}
+
+// ── HELPERS ──
+function g(id){return(document.getElementById(id)?.value||'').trim();}
+function s(id,v){const el=document.getElementById(id);if(el)el.textContent=v||'—';}
+function fmtF(v){if(!v)return'—';const[y,m,d]=v.split('-');const ms=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return d+'/'+ms[+m]+'/'+y;}
+function nowStr(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+function todayStr(){const n=new Date();const ms=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return String(n.getDate()).padStart(2,'0')+'/'+ms[n.getMonth()+1]+'/'+n.getFullYear();}
+function genFolio(){const n=new Date();const d=String(n.getFullYear()).slice(2)+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0');const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return'PS-'+d+'-'+s;}
+function pillCls(t){const m={LOCAL:'pill-local',RECOLECCION:'pill-rec',REGIONAL:'pill-regional',NACIONAL:'pill-nacional',CRUCE:'pill-cruce',BINACIONAL:'pill-binacional'};return m[t]||'pill-local';}
+function updateCnt(){document.getElementById('bita-cnt').textContent=bitacora.length;}
+
+// ── OPERADORES ──
+function filtrarOps(){
+  const tipo=g('d-tipo-op');
+  const sel=document.getElementById('d-op');
+  sel.innerHTML='';
+  if(!tipo){sel.disabled=true;const o=document.createElement('option');o.textContent='⬅ Elige tipo primero';sel.appendChild(o);regen();return;}
+  sel.disabled=false;
+  const bl=document.createElement('option');bl.value='';bl.textContent='-- Selecciona operador --';sel.appendChild(bl);
+  (OPERADORES[tipo]||[]).forEach(n=>{const o=document.createElement('option');o.value=o.textContent=n;sel.appendChild(o);});
+  regen();
+}
+
+function onRuta(){
+  const id=g('d-ruta');const r=RUTAS.find(x=>x.id===id);
+  if(r){document.getElementById('d-origen').value=r.or;document.getElementById('d-destino').value=r.dst;}
+  regen();
+}
+
+// ── QR ──
+function generarQR(texto){
+  const c=document.getElementById('qr-container');
+  c.innerHTML='';
+  if(!texto)return;
+  try{new QRCode(c,{text:texto,width:70,height:70,correctLevel:QRCode.CorrectLevel.M});}catch(e){}
+}
+
+// ── PREVIEW ──
+function regen(){
+  const rid=g('d-ruta');const rd=RUTAS.find(x=>x.id===rid);
+  const rutaTxt=rd?rd.id+' — '+rd.n:(g('d-origen')&&g('d-destino')?g('d-origen')+' → '+g('d-destino'):'—');
+  const desp=g('d-desp');
+  document.getElementById('badge-desp').textContent=desp?'✓ '+desp:'Sin selección';
+  document.getElementById('badge-desp').style.background=desp?'#16A34A':'#94A3B8';
+  s('pv-folio',folioActual||'PS-??????');
+  s('pv-folio2',folioActual||'—');
+  s('pv-wo',g('d-wo'));s('pv-tipo',g('d-tipo')?'TIPO: '+g('d-tipo'):'—');
+  s('pv-op',g('d-op'));s('pv-tipo-op',g('d-tipo-op'));
+  s('pv-unidad',g('d-unidad'));s('pv-caja',g('d-caja'));s('pv-placas',g('d-placas'));
+  s('pv-cli',g('d-cli'));s('pv-desp',desp);s('pv-f-desp',desp||'DESPACHADOR');
+  s('pv-ruta',rutaTxt);s('pv-origen',g('d-origen'));s('pv-destino',g('d-destino'));
+  s('pv-fecha',fmtF(g('d-fecha')));
+  s('pv-hora',g('d-hora')?g('d-hora')+' hrs':'—');
+  s('pv-retorno',fmtF(g('d-retorno')));
+  s('pv-footer','Folio: '+(folioActual||'—')+' · WO: '+(g('d-wo')||'—')+' · Emitido: '+todayStr()+' '+nowStr()+' · Transportes Miracle S.A. de C.V.');
+}
+
+// ── GENERAR ──
+async function generarPase(){
+  const req=[['d-desp','Despachador'],['d-wo','WO / Folio'],['d-op','Operador'],['d-unidad','Unidad ECO'],['d-caja','Caja ECO'],['d-hora','Hora autorizada']];
+  const falt=req.filter(([id])=>!g(id)).map(([,l])=>l);
+  if(falt.length){alert('Faltan campos obligatorios:\n\n• '+falt.join('\n• '));return;}
+  folioActual=genFolio();
+  const rid=g('d-ruta');const rd=RUTAS.find(x=>x.id===rid);
+  paseActual={
+    folio:folioActual,wo:g('d-wo'),tipo:g('d-tipo'),
+    operador:g('d-op'),tipo_op:g('d-tipo-op'),
+    unidad:g('d-unidad'),caja:g('d-caja'),placas:g('d-placas'),
+    cliente:g('d-cli'),despachador:g('d-desp'),
+    ruta:rd?rd.id+' — '+rd.n:(g('d-origen')+' → '+g('d-destino')),
+    origen:g('d-origen'),destino:g('d-destino'),
+    fecha:fmtF(g('d-fecha')),hora:g('d-hora')+' hrs',retorno:fmtF(g('d-retorno')),
+    emitido:todayStr()+' '+nowStr(),
+    status:'pendiente',guardia:'',hora_real:''
+  };
+  bitacora.unshift(paseActual);
+  regen();
+  generarQR('MIRACLE-PASE:'+folioActual+'|WO:'+g('d-wo')+'|OP:'+g('d-op')+'|UNIDAD:'+g('d-unidad')+'|CAJA:'+g('d-caja'));
+  document.getElementById('acciones').style.display='block';
+  updateCnt();renderStats();renderBita();
+  await guardarEnSB(paseActual);
+}
+
+function enviarWA(){
+  if(!paseActual){alert('Genera el pase primero');return;}
+  const txt=`🚛 *TRANSPORTES MIRACLE — PASE DE SALIDA DIGITAL*\n\n📋 Folio: *${paseActual.folio}*\n📦 WO: *${paseActual.wo}*\n🏷 Tipo: ${paseActual.tipo}\n👤 Operador: ${paseActual.operador}\n🚛 Unidad: ${paseActual.unidad} / Caja: ${paseActual.caja}\n🗺 Ruta: ${paseActual.ruta}\n⏰ Hora auth: ${paseActual.hora}\n📅 Retorno: ${paseActual.retorno}\n\n_Muestra este mensaje al guardia en caseta_\n_Folio para guardia: *${paseActual.folio}*_\n\n⚠️ Pase digital por tema operativo — físico pendiente de firma`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt));
+}
+
+function copiarFolio(){
+  if(!paseActual)return;
+  const txt='FOLIO: '+paseActual.folio+' | WO: '+paseActual.wo+' | Op: '+paseActual.operador;
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  document.getElementById('msg-copiado').style.display='block';
+  setTimeout(()=>document.getElementById('msg-copiado').style.display='none',3000);
+}
+
+function limpiar(){
+  ['d-wo','d-tipo','d-tipo-op','d-unidad','d-caja','d-placas','d-cli','d-ruta','d-origen','d-destino','d-hora','d-retorno','d-desp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const sel=document.getElementById('d-op');sel.innerHTML='<option value="">⬅ Elige tipo primero</option>';sel.disabled=true;
+  document.getElementById('d-fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('qr-container').innerHTML='';
+  document.getElementById('acciones').style.display='none';
+  folioActual='';paseActual=null;regen();
+}
+
+// ── GUARDIA ──
+async function buscarPase(){
+  const q=document.getElementById('g-buscar').value.trim().toUpperCase();
+  const el=document.getElementById('g-resultado');
+  if(q.length<3){el.innerHTML='';return;}
+  el.innerHTML='<div style="color:#64748B;font-size:13px;padding:12px 0;text-align:center">🔍 Buscando...</div>';
+  // Buscar primero en memoria local
+  let p=bitacora.find(x=>x.folio.toUpperCase().includes(q)||x.wo.toUpperCase().includes(q)||x.operador.toUpperCase().includes(q));
+  // Si no está en memoria, buscar en Supabase
+  if(!p && sbOk){
+    try{
+      const qEnc=encodeURIComponent(q.toLowerCase());
+      const res=await sbFetch(`pases_salida?or=(folio.ilike.*${qEnc}*,wo.ilike.*${qEnc}*,operador.ilike.*${qEnc}*)&limit=1`);
+      if(res&&res.length>0){
+        const r=res[0];
+        p={folio:r.folio,wo:r.wo,tipo:r.tipo,operador:r.operador,tipo_op:r.tipo_op,
+          unidad:r.unidad,caja:r.caja,placas:r.placas,cliente:r.cliente,
+          despachador:r.despachador,ruta:r.ruta,origen:r.origen,destino:r.destino,
+          fecha:r.fecha_salida,hora:r.hora_auth,retorno:r.fecha_retorno,
+          emitido:new Date(r.created_at).toLocaleString('es-MX'),
+          status:r.status,guardia:r.guardia||'',hora_real:r.hora_real||''};
+        // agregar a memoria local para actualizaciones
+        if(!bitacora.find(x=>x.folio===p.folio)) bitacora.unshift(p);
+      }
+    }catch(e){console.warn('Error buscando en SB',e);}
+  }
+  if(!p){
+    el.innerHTML='<div style="color:#94A3B8;font-size:13px;padding:16px;text-align:center">No se encontró ningún pase.<br><small>Verifica el folio o WO con el despachador.</small></div>';
+    return;
+  }
+  el.innerHTML=renderGuardiaPase(p);
+}
+
+function renderGuardiaPase(p){
+  const isAuth=p.status==='autorizado';
+  const isRec=p.status==='rechazado';
+  return`<div class="g-pase">
+    <div class="g-pase-hdr">
+      <div>
+        <div style="font-size:14px;font-weight:700">Pase de Salida</div>
+        <div style="font-size:10px;color:#BBF7D0;margin-top:2px">Emitido: ${p.emitido} · ${p.tipo||''}</div>
+      </div>
+      <div class="g-pase-folio">${p.folio}</div>
+    </div>
+    <div class="g-body">
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;color:#64748B;margin-bottom:3px">WO / PRESOLICITUD</div>
+        <div style="font-size:22px;font-weight:700;color:#1B3A6B">${p.wo}</div>
+      </div>
+      <div class="g-omision">📱 Pase emitido en formato digital por tema operativo. Documento físico pendiente de firma. La confirmación digital del guardia tiene plena validez.</div>
+      <div class="g-row">
+        <div class="g-cell"><div class="g-cell-lbl">Operador</div><div class="g-cell-val">${p.operador||'—'}</div></div>
+        <div class="g-cell"><div class="g-cell-lbl">Tipo op.</div><div class="g-cell-val">${p.tipo_op||'—'}</div></div>
+        <div class="g-cell"><div class="g-cell-lbl">Unidad</div><div class="g-cell-val big">${p.unidad||'—'}</div></div>
+        <div class="g-cell"><div class="g-cell-lbl">Caja</div><div class="g-cell-val big">${p.caja||'—'}</div></div>
+        <div class="g-cell"><div class="g-cell-lbl">Cliente</div><div class="g-cell-val">${p.cliente||'—'}</div></div>
+        <div class="g-cell"><div class="g-cell-lbl">Hora auth.</div><div class="g-cell-val">${p.hora||'—'}</div></div>
+      </div>
+      <div class="g-cell" style="margin-bottom:10px"><div class="g-cell-lbl">Ruta</div><div class="g-cell-val" style="font-size:12px">${p.ruta||'—'}</div></div>
+      <div class="g-cell" style="margin-bottom:10px"><div class="g-cell-lbl">Despachador que emite</div><div class="g-cell-val">${p.despachador||'—'}</div></div>
+      ${isAuth?`<div class="msg-ok"><span class="msg-ok-icon">✅</span><div style="font-size:15px;font-weight:700;color:#166534">Salida autorizada</div><div style="font-size:12px;color:#4B7C5C;margin-top:4px">Guardia: ${p.guardia} · Hora: ${p.hora_real}</div></div>`:
+        isRec?`<div class="msg-rec"><span style="font-size:36px;display:block;margin-bottom:6px">❌</span><div style="font-size:15px;font-weight:700;color:#991B1B">Pase rechazado</div><div style="font-size:12px;color:#7F1D1D;margin-top:4px">Guardia: ${p.guardia} · Hora: ${p.hora_real}</div></div>`:
+        `<div style="margin-bottom:8px"><label style="font-size:11px;font-weight:700;color:#1B3A6B;display:block;margin-bottom:4px">NOMBRE DEL GUARDIA *</label><input type="text" id="g-nombre" placeholder="Tu nombre completo" style="width:100%;padding:10px;border:2px solid #1B3A6B;border-radius:6px;font-size:14px;font-family:inherit"></div>
+        <button class="btn-autorizar" onclick="autorizarPase('${p.folio}','ok')">✅ &nbsp;AUTORIZAR SALIDA</button>
+        <button class="btn-rechazar-g" onclick="autorizarPase('${p.folio}','rec')">❌ &nbsp;RECHAZAR — No autorizar salida</button>`
+      }
+    </div>
+  </div>`;
+}
+
+async function autorizarPase(folio,accion){
+  const gn=(document.getElementById('g-nombre')?.value||'').trim();
+  if(!gn){alert('Escribe tu nombre como guardia antes de continuar.');return;}
+  const p=bitacora.find(x=>x.folio===folio);if(!p)return;
+  p.status=accion==='ok'?'autorizado':'rechazado';
+  p.guardia=gn;p.hora_real=nowStr();
+  document.getElementById('g-resultado').innerHTML=renderGuardiaPase(p);
+  renderStats();renderBita();updateCnt();
+  await actualizarSB(folio,p.status,gn,p.hora_real);
+}
+
+// ── ESTADÍSTICOS ──
+function renderStats(){
+  const total=bitacora.length;
+  const auth=bitacora.filter(x=>x.status==='autorizado').length;
+  const pend=bitacora.filter(x=>x.status==='pendiente').length;
+  const rec=bitacora.filter(x=>x.status==='rechazado').length;
+  document.getElementById('st-total').textContent=total;
+  document.getElementById('st-auth').textContent=auth;
+  document.getElementById('st-pend').textContent=pend;
+  document.getElementById('st-rec').textContent=rec;
+  const tipoColors={LOCAL:'#2563EB',RECOLECCION:'#7C3AED',REGIONAL:'#166534',NACIONAL:'#D97706',CRUCE:'#0891B2',BINACIONAL:'#DC2626'};
+  const tipos=Object.keys(tipoColors);
+  const maxT=Math.max(1,...tipos.map(t=>bitacora.filter(x=>x.tipo===t).length));
+  document.getElementById('tipo-bars').innerHTML=total?tipos.map(t=>{
+    const cnt=bitacora.filter(x=>x.tipo===t).length;
+    return`<div class="bar-row"><div class="bar-lbl">${t}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxT*100)}%;background:${tipoColors[t]}"></div></div><div class="bar-cnt">${cnt}</div></div>`;
+  }).join(''):'<div style="color:#94A3B8;font-size:12px">Sin datos aún</div>';
+  const desps=['FRANSIS','ADRIAN SOLORIO','IVAN GONZALEZ','ADRIAN BORQUEZ','ZUSETH CHIQUITO'];
+  const maxD=Math.max(1,...desps.map(d=>bitacora.filter(x=>x.despachador===d).length));
+  document.getElementById('desp-bars').innerHTML=total?desps.map(d=>{
+    const cnt=bitacora.filter(x=>x.despachador===d).length;
+    return`<div class="bar-row"><div class="bar-lbl" style="width:110px;font-size:10px">${d}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(cnt/maxD*100)}%;background:#1B3A6B"></div></div><div class="bar-cnt">${cnt}</div></div>`;
+  }).join(''):'<div style="color:#94A3B8;font-size:12px">Sin datos aún</div>';
+}
+
+function renderBita(){
+  const q=(document.getElementById('bita-q')?.value||'').toUpperCase();
+  const datos=q?bitacora.filter(x=>(x.wo+x.operador+x.folio+x.guardia+x.tipo+x.despachador).toUpperCase().includes(q)):bitacora;
+  const wrap=document.getElementById('bita-wrap');
+  if(!datos.length){wrap.innerHTML='<div class="empty">📋<br><br>No hay pases en la bitácora.<br><small>Genera el primer pase desde la pestaña Despachador.</small></div>';return;}
+  wrap.innerHTML=`<table class="bita-tbl">
+    <thead><tr><th>Folio</th><th>WO</th><th>Tipo</th><th>Operador</th><th>Unidad</th><th>Caja</th><th>Cliente</th><th>Hora auth.</th><th>Despachador</th><th>Guardia</th><th>Hora real</th><th>Emitido</th><th>Estado</th></tr></thead>
+    <tbody>${datos.map(p=>`<tr>
+      <td style="font-size:10px;font-weight:600;white-space:nowrap">${p.folio}</td>
+      <td style="font-weight:600">${p.wo}</td>
+      <td><span class="pill ${pillCls(p.tipo)}">${p.tipo||'—'}</span></td>
+      <td style="font-size:11px">${p.operador||'—'}</td>
+      <td>${p.unidad||'—'}</td>
+      <td>${p.caja||'—'}</td>
+      <td>${p.cliente||'—'}</td>
+      <td>${p.hora||'—'}</td>
+      <td style="font-size:11px">${p.despachador||'—'}</td>
+      <td style="font-size:11px">${p.guardia||'—'}</td>
+      <td>${p.hora_real||'—'}</td>
+      <td style="font-size:10px;white-space:nowrap">${p.emitido}</td>
+      <td>${p.status==='autorizado'?'<span class="status-auth">✅ Autorizado</span>':p.status==='rechazado'?'<span class="status-rec-s">❌ Rechazado</span>':'<span class="status-pend">⏳ Pendiente</span>'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function exportCSV(){
+  if(!bitacora.length){alert('No hay datos en la bitácora todavía');return;}
+  const cols=['folio','wo','tipo','operador','tipo_op','unidad','caja','placas','cliente','ruta','fecha','hora','retorno','despachador','guardia','hora_real','emitido','status'];
+  const csv=cols.join(',')+'\n'+bitacora.map(p=>cols.map(c=>'"'+(p[c]||'')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='MIRACLE_Bitacora_Pases_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+function showTab(id){
+  ['desp','guardia','bita'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===id);
+    document.getElementById('panel-'+t).classList.toggle('active',t===id);
+  });
+  if(id==='bita'){renderStats();renderBita();}
+}
+
+document.getElementById('d-fecha').value=new Date().toISOString().split('T')[0];
+regen();
+iniciarSB();
+</script>
+</body>
+</html>
